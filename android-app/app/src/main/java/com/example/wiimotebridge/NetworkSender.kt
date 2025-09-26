@@ -28,14 +28,15 @@ class NetworkSender(private val host: String, private val port: Int) {
         scope.launch {
             while (socket == null) {
                 try {
+                    Log.i("WiimoteBridge", "Attempting to connect to $host:$port")
                     val s = Socket()
                     s.connect(InetSocketAddress(host, port), 2000)
                     socket = s
                     out = DataOutputStream(s.getOutputStream())
                     inp = DataInputStream(s.getInputStream())
-                    Log.i("NetworkSender", "Connected to $host:$port")
+                    Log.i("WiimoteBridge", "Connected to $host:$port")
                 } catch (e: Exception) {
-                    Log.w("NetworkSender", "Connect failed: ${e.message}. Retrying in 2s.")
+                    Log.w("WiimoteBridge", "Connect failed: ${e.message}. Retrying in 2s.")
                     delay(2000)
                 }
             }
@@ -46,6 +47,7 @@ class NetworkSender(private val host: String, private val port: Int) {
         val s = seq.getAndIncrement()
         val frame = mapOf("seq" to s, "payload" to payload)
         val raw = gson.toJson(frame)
+        Log.d("WiimoteBridge", "Sending event: $raw")
         scope.launch {
             var tries = 0
             while (tries < maxRetries) {
@@ -73,21 +75,22 @@ class NetworkSender(private val host: String, private val port: Int) {
                     }
 
                     if (ack != null) {
-                        // parse ack
-                        val ackMap: Map<String, Any> = gson.fromJson(ack, Map::class.java)
-                        val ackSeq = (ackMap["ack"] as? Double)?.toLong() ?: -1L
+                        // parse ack with safe cast
+                        val ackMap = gson.fromJson(ack, Map::class.java)
+                        val ackSeq = ( (ackMap as? Map<*, *>)?.get("ack") as? Double)?.toLong() ?: -1L
                         if (ackSeq == s) {
+                            Log.d("WiimoteBridge", "Received ack for seq $s")
                             // success
                             return@launch
                         }
                     }
                 } catch (e: Exception) {
-                    Log.w("NetworkSender", "send attempt failed: ${e.message}")
+                    Log.w("WiimoteBridge", "send attempt failed: ${e.message}")
                 }
                 tries++
                 delay(200)
             }
-            Log.w("NetworkSender", "Failed to send after $maxRetries tries.")
+            Log.w("WiimoteBridge", "Failed to send after $maxRetries tries.")
         }
     }
 

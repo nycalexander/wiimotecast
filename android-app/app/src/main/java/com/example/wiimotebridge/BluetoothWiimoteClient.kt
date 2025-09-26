@@ -26,11 +26,14 @@ class BluetoothWiimoteClient(
     fun runLoop() {
         thread(start = true) {
             try {
+                Log.i("WiimoteBridge", "Attempting to connect to device: ${device.name} (${device.address})")
                 connect()
+                Log.i("WiimoteBridge", "Connected, starting read loop")
                 readLoop()
             } catch (e: Exception) {
-                Log.e("BluetoothWiimote", "error: ${e.message}", e)
+                Log.e("WiimoteBridge", "error: ${e.message}", e)
             } finally {
+                Log.i("WiimoteBridge", "Closing Bluetooth client")
                 close()
             }
         }
@@ -46,16 +49,16 @@ class BluetoothWiimoteClient(
                     null
                 }
                 if (method != null) {
-                    Log.i("BluetoothWiimote", "Using createInsecureL2capChannel via reflection")
+                    Log.i("WiimoteBridge", "Using createInsecureL2capChannel via reflection")
                     // create channel to interrupt PSM
                     socket = method.invoke(device, PSM_INTERRUPT) as BluetoothSocket
                     socket?.connect()
-                    Log.i("BluetoothWiimote", "Connected to Wiimote via L2CAP PSM $PSM_INTERRUPT")
+                    Log.i("WiimoteBridge", "Connected to Wiimote via L2CAP PSM $PSM_INTERRUPT")
                     return
                 }
             }
         } catch (e: Exception) {
-            Log.w("BluetoothWiimote", "L2CAP reflection failed: ${e.message}")
+            Log.w("WiimoteBridge", "L2CAP reflection failed: ${e.message}")
         }
 
         // Fallback: try RFCOMM to the well-known Bluetooth HID UUID or random SPP (this might fail for Wiimote)
@@ -63,10 +66,10 @@ class BluetoothWiimoteClient(
             val uuid = java.util.UUID.fromString("00001124-0000-1000-8000-00805f9b34fb") // HID profile UUID
             socket = device.createInsecureRfcommSocketToServiceRecord(uuid)
             socket?.connect()
-            Log.i("BluetoothWiimote", "Connected to Wiimote via RFCOMM (HID UUID) fallback")
+            Log.i("WiimoteBridge", "Connected to Wiimote via RFCOMM (HID UUID) fallback")
             return
         } catch (e: Exception) {
-            Log.w("BluetoothWiimote", "RFCOMM fallback failed: ${e.message}")
+            Log.w("WiimoteBridge", "RFCOMM fallback failed: ${e.message}")
         }
 
         throw IllegalStateException("Unable to open BT socket to Wiimote on this device/OS.")
@@ -78,17 +81,21 @@ class BluetoothWiimoteClient(
         try {
             while (running) {
                 val r = `is`.read(buf)
+
                 if (r <= 0) {
                     Thread.sleep(30)
                     continue
                 }
+
+                
                 val packet = buf.copyOf(r)
+                Log.i("WiimoteBridge", "Read $r bytes: ${packet.joinToString { String.format("%02X", it) }}")
                 handlePacket(packet)
             }
         } catch (ste: SocketTimeoutException) {
-            Log.w("BluetoothWiimote", "read timeout")
+            Log.w("WiimoteBridge", "read timeout")
         } catch (e: Exception) {
-            Log.e("BluetoothWiimote", "read error ${e.message}", e)
+            Log.e("WiimoteBridge", "read error ${e.message}", e)
         }
     }
 
@@ -98,8 +105,11 @@ class BluetoothWiimoteClient(
         // This is not perfect for all firmwares — improve if you need more controls (accel, ir, ext nunchuk).
         if (packet.size < 3) return
         // naive example: extract two button bytes
-        val b1 = packet[1].toInt() and 0xFF
-        val b2 = packet[2].toInt() and 0xFF
+    // val b1 = packet[1].toInt() and 0xFF // removed unused variable
+         val b2 = packet[2].toInt() and 0xFF
+
+        Log.i("WiimoteBridge", "Raw packet for parsing: ${packet.joinToString { String.format("%02X", it) }}")
+
 
         // Map bits to logical Wiimote buttons: (this mapping may need tweaking per Wiimote model)
         val buttonMap = mutableMapOf<String, Int>()
@@ -108,12 +118,14 @@ class BluetoothWiimoteClient(
         buttonMap["A"] = if ((b2 and 0x08) != 0) 1 else 0 // sample bit mapping -- real mapping may differ
         buttonMap["B"] = if ((b2 and 0x04) != 0) 1 else 0
 
+
         // Send JSON event to server
         val msg = mapOf(
             "buttons" to buttonMap,
             "axes" to mapOf<String, Double>(),
             "triggers" to mapOf<String, Double>()
         )
+        Log.d("WiimoteBridge", "Sending event: $msg")
         sender.sendEvent(msg)
     }
 

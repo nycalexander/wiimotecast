@@ -1,6 +1,13 @@
 # Gradle files
 .gradle/
 build/
+.qodo/
+android-sdk-temp/
+apk-output/
+gradle-temp/
+cmdline-tools.zip
+android-app/gradle/
+android-app/
 
 # Local configuration file (sdk path, etc)
 local.properties

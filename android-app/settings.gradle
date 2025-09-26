@@ -1,0 +1,3 @@
+// android-app/settings.gradle
+rootProject.name = "wiimotebridge"
+include(":app")

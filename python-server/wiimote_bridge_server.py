@@ -15,7 +15,7 @@ except Exception as e:
     raise
 
 HOST = "0.0.0.0"
-PORT = 5555
+PORT = 4968
 
 # Map friendly button names to XUSB_BUTTON constants
 BUTTON_MAP = {
@@ -57,6 +57,7 @@ def handle_message(msg):
     Interpret msg payload and apply to virtual gamepad.
     msg expected: { "payload": { "buttons": {...}, "axes": {...}, "triggers": {...} } }
     """
+    print(f"[LOG] Received packet: {json.dumps(msg)}")
     payload = msg.get("payload", {})
     buttons = payload.get("buttons", {})
     axes = payload.get("axes", {})
@@ -66,10 +67,13 @@ def handle_message(msg):
     for name, val in buttons.items():
         btn = BUTTON_MAP.get(name.upper())
         if btn is None:
+            print(f"[LOG] Unknown button: {name}")
             continue
         if bool(val):
+            print(f"[LOG] Press button: {name}")
             gamepad.press_button(button=btn)
         else:
+            print(f"[LOG] Release button: {name}")
             gamepad.release_button(button=btn)
 
     # Axes - expect floats -1..1
@@ -77,6 +81,7 @@ def handle_message(msg):
     ly = float(axes.get("left_y", 0.0))
     rx = float(axes.get("right_x", 0.0))
     ry = float(axes.get("right_y", 0.0))
+    print(f"[LOG] Axes: left_x={lx}, left_y={ly}, right_x={rx}, right_y={ry}")
     try:
         gamepad.left_joystick_float(x_value=lx, y_value=ly)
         gamepad.right_joystick_float(x_value=rx, y_value=ry)
@@ -88,6 +93,7 @@ def handle_message(msg):
     # Triggers - expect 0..1
     lt = float(triggers.get("lt", 0.0))
     rt = float(triggers.get("rt", 0.0))
+    print(f"[LOG] Triggers: lt={lt}, rt={rt}")
     try:
         gamepad.left_trigger(int(max(0, min(1, lt)) * 255))
         gamepad.right_trigger(int(max(0, min(1, rt)) * 255))
