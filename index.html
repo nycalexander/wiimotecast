@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>WiimoteCast Project</title>
+  <style>
+    body {
+      font-family: 'Segoe UI', Arial, sans-serif;
+      background: #f7f9fa;
+      color: #222;
+      margin: 0;
+      padding: 0;
+    }
+    header {
+      background: #2d3e50;
+      color: #fff;
+      padding: 2rem 1rem 1rem 1rem;
+      text-align: center;
+    }
+    header h1 {
+      margin: 0 0 0.5rem 0;
+      font-size: 2.5rem;
+      letter-spacing: 2px;
+    }
+    header p {
+      font-size: 1.2rem;
+      color: #cfd8dc;
+    }
+    nav {
+      background: #1a232b;
+      padding: 0.5rem 0;
+      text-align: center;
+    }
+    nav a {
+      color: #90caf9;
+      text-decoration: none;
+      margin: 0 1.2rem;
+      font-weight: 500;
+      font-size: 1.1rem;
+      transition: color 0.2s;
+    }
+    nav a:hover {
+      color: #fff;
+    }
+    main {
+      max-width: 900px;
+      margin: 2rem auto;
+      background: #fff;
+      border-radius: 10px;
+      box-shadow: 0 2px 12px #0001;
+      padding: 2rem 2.5rem;
+    }
+    h2 {
+      color: #2d3e50;
+      margin-top: 2rem;
+    }
+    ul, ol {
+      margin-left: 2rem;
+    }
+    code, pre {
+      background: #f1f3f4;
+      color: #222;
+      border-radius: 4px;
+      padding: 2px 6px;
+      font-size: 1em;
+    }
+    footer {
+      text-align: center;
+      color: #888;
+      font-size: 0.95rem;
+      margin: 2rem 0 1rem 0;
+    }
+    @media (max-width: 600px) {
+      main { padding: 1rem 0.5rem; }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>WiimoteCast</h1>
+    <p>Bridge your Nintendo Wiimote to your PC via Android &mdash; with Dolphin Emulator and custom server support.</p>
+  </header>
+  <nav>
+    <a href="#overview">Overview</a>
+    <a href="#features">Features</a>
+    <a href="#architecture">Architecture</a>
+    <a href="#android">Android App</a>
+    <a href="#python">Python Server</a>
+    <a href="#troubleshooting">Troubleshooting</a>
+    <a href="#research">Research</a>
+    <a href="https://github.com/nycalexander/wiimotecast" target="_blank">GitHub</a>
+  </nav>
+  <main>
+    <section id="overview">
+      <h2>Overview</h2>
+      <p><b>WiimoteCast</b> is an open-source project that lets you use your Nintendo Wiimote as a controller for your PC, using your Android device as a bridge. It supports both Dolphin Emulator and custom input servers, overcoming modern Android Bluetooth restrictions with HID polling and robust networking.</p>
+    </section>
+    <section id="features">
+      <h2>Features</h2>
+      <ul>
+        <li>Wiimote input relay from Android to PC (via WiFi/network)</li>
+        <li>Dolphin Emulator UDP protocol support</li>
+        <li>Custom server mode (JSON over TCP/UDP)</li>
+        <li>Device selection, service control, and log viewer in-app</li>
+        <li>Foreground service with persistent notification</li>
+        <li>Works with HID adapters and OTG setups</li>
+        <li>Open, research-focused, and fully documented</li>
+      </ul>
+    </section>
+    <section id="architecture">
+      <h2>Architecture</h2>
+      <pre><code>[Wiimote] &lt;--&gt; [Android: WiimoteCast App] &lt;--&gt; [WiFi/Network] &lt;--&gt; [PC: Python Server/Dolphin]</code></pre>
+      <ul>
+        <li><b>Wiimote</b>: Connects to Android via Bluetooth (if possible) or as a HID device.</li>
+        <li><b>Android App</b>: Reads input, translates to JSON/UDP, and forwards to the server.</li>
+        <li><b>PC Server</b>: Receives input, emulates gamepad or feeds Dolphin Emulator.</li>
+      </ul>
+    </section>
+    <section id="android">
+      <h2>Android App</h2>
+      <ul>
+        <li>Written in Kotlin, programmatic UI (no XML layouts)</li>
+        <li>Requests all required Bluetooth and notification permissions</li>
+        <li>HID polling for modern Android compatibility</li>
+        <li>Foreground service for reliability</li>
+        <li>Device selection, IP/port entry, Dolphin mode toggle</li>
+        <li>Log viewer for debugging</li>
+      </ul>
+    </section>
+    <section id="python">
+      <h2>Python Server</h2>
+      <ul>
+        <li>Receives input from the app (JSON or Dolphin UDP)</li>
+        <li>Emulates a gamepad using <code>vgamepad</code> or similar libraries</li>
+        <li>Logs all received packets and input actions</li>
+        <li>Extensible for other emulators or custom input schemes</li>
+      </ul>
+    </section>
+    <section id="troubleshooting">
+      <h2>Troubleshooting</h2>
+      <ul>
+        <li><b>Bluetooth connection fails?</b> Use HID mode or try an older device.</li>
+        <li><b>No devices listed?</b> Ensure Wiimote is paired, or use a HID adapter.</li>
+        <li><b>No input on PC?</b> Check server logs, firewall, and network connectivity.</li>
+        <li><b>Dolphin not receiving input?</b> Ensure correct IP/port and UDP server enabled.</li>
+      </ul>
+    </section>
+    <section id="research">
+      <h2>Research &amp; References</h2>
+      <ul>
+        <li><a href="https://wiki.dolphin-emu.org/index.php?title=UDP_Wiimote" target="_blank">Dolphin Emulator UDP Protocol</a></li>
+        <li><a href="https://developer.android.com/guide/topics/connectivity/bluetooth" target="_blank">Android Bluetooth Security Changes</a></li>
+        <li><a href="https://pypi.org/project/vgamepad/" target="_blank">vgamepad Python Library</a></li>
+        <li><a href="https://developer.android.com/reference/android/view/InputDevice" target="_blank">Android InputDevice API</a></li>
+      </ul>
+      <p>This project is open for research, learning, and hacking. Contributions and forks are welcome!</p>
+    </section>
+  </main>
+  <footer>
+    &copy; 2025 WiimoteCast &mdash; <a href="https://github.com/nycalexander/wiimotecast" target="_blank">GitHub Project</a>
+  </footer>
+</body>
+</html>
