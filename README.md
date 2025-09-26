@@ -1,5 +1,7 @@
 # WiimoteCast
 
+<img src="wii.jpg" height="600px" width="auto">
+
 ## Overview
 WiimoteCast is an Android application and companion Python server that enables you to use a Nintendo Wiimote as a controller universally (over ViGEmBus [vgamepad] as an XBOX360 controller) for your PC, including support for Dolphin Emulator, any game with controller support in general and custom input servers. Unfortunately at the moment, L2CAP is restricted on Android, hence why this project is not functional on modern Android versions.
 
