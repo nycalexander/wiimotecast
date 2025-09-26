@@ -1,0 +1,51 @@
+name: Android build (assembleDebug, no local SDK)
+
+on:
+  push:
+    branches: [ main, master ]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout repo
+      uses: actions/checkout@v4
+
+    - name: Set up JDK 17
+      uses: actions/setup-java@v4
+      with:
+        distribution: temurin
+        java-version: '17'
+
+    - name: Install Android command-line tools and SDK packages
+      run: |
+        set -e
+        mkdir -p $HOME/android-sdk/cmdline-tools
+        cd $HOME/android-sdk
+        curl -sSfL https://dl.google.com/android/repository/commandlinetools-linux-10949626_latest.zip -o cmdline-tools.zip
+        unzip -q cmdline-tools.zip -d cmdline-tools
+        mkdir -p cmdline-tools/latest
+        mv cmdline-tools/cmdline-tools/* cmdline-tools/latest/ || true
+        export ANDROID_SDK_ROOT=$HOME/android-sdk
+        export PATH=$ANDROID_SDK_ROOT/cmdline-tools/latest/bin:$ANDROID_SDK_ROOT/platform-tools:$PATH
+        yes | sdkmanager --sdk_root=${ANDROID_SDK_ROOT} --licenses
+        yes | sdkmanager --sdk_root=${ANDROID_SDK_ROOT} "platform-tools" "platforms;android-33" "build-tools;33.0.2"
+      shell: bash
+
+    - name: Grant execution for gradlew
+      run: chmod +x ./android-app/gradlew || true
+
+    - name: Build debug APK (Gradle)
+      env:
+        ANDROID_SDK_ROOT: ${{ runner.temp }}/android-sdk
+      run: |
+        echo "sdk.dir=$HOME/android-sdk" > android-app/local.properties
+        cd android-app
+        ./gradlew assembleDebug --stacktrace
+
+    - name: Upload APK artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: apk
+        path: android-app/app/build/outputs/apk/debug/*.apk
